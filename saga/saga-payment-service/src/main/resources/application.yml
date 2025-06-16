@@ -16,17 +16,20 @@
 #
 
 quarkus:
-  artemis:
-    url: tcp://localhost:61616
-    username: admin
-    password: admin
+  live-reload:
+    instrumentation: true
+  kafka:
+    devservices:
+      enabled: true
+kafka:
+  bootstrap:
+    servers: localhost:9092
 camel:
   rest:
     context-path: /api
   component:
-    jms:
-      test-connection-on-startup: true
-      concurrent-consumers: 5
+    kafka:
+      brokers: localhost:9092
   lra:
     enabled: true
     coordinator-url: http://localhost:8080
@@ -41,4 +44,3 @@ logging:
     org.apache.camel.processor.errorhandler.DefaultErrorHandler: OFF
     org.apache.camel.component.jms.EndpointMessageListener: OFF
     org.apache.camel.component.jms.reply.QueueReplyManager: OFF
-

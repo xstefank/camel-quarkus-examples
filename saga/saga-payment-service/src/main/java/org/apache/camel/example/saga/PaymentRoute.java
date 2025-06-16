@@ -16,6 +16,7 @@
  */
 package org.apache.camel.example.saga;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.SagaPropagation;
 
@@ -24,12 +25,13 @@ public class PaymentRoute extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
-        from("jms:queue:{{example.services.payment}}")
+        from("kafka:{{example.services.payment}}?groupId=payment")
                 .routeId("payment-service")
                 .saga()
                 .propagation(SagaPropagation.MANDATORY)
                 .option("id", header("id"))
                 .compensation("direct:cancelPayment")
+                .transform().header(Exchange.SAGA_LONG_RUNNING_ACTION)
                 .log("Paying ${header.payFor} for order #${header.id}")
                 .setBody(header("JMSCorrelationID"))
                 .choice()
@@ -37,6 +39,7 @@ public class PaymentRoute extends RouteBuilder {
                 .log("Payment ${header.payFor} for saga #${header.id} fails!")
                 .throwException(new RuntimeException("Random failure during payment"))
                 .endChoice()
+                .to("kafka:{{example.services.payment}}-result")
                 .end()
                 .log("Payment ${header.payFor} done for order #${header.id} with payment transaction ${body}")
                 .end();

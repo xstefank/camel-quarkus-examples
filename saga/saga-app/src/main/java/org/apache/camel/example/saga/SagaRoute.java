@@ -16,6 +16,7 @@
  */
 package org.apache.camel.example.saga;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestParamType;
 
@@ -29,16 +30,16 @@ public class SagaRoute extends RouteBuilder {
                 .to("direct:saga");
 
         from("direct:saga")
+                .routeId("SagaRouteSender")
                 .saga()
                 .compensation("direct:cancelOrder")
+                .transform().header(Exchange.SAGA_LONG_RUNNING_ACTION)
                 .log("Executing saga #${header.id} with LRA ${header.Long-Running-Action}")
                 .setHeader("payFor", constant("train"))
-                .to("jms:queue:{{example.services.train}}?exchangePattern=InOut" +
-                        "&replyTo={{example.services.train}}.reply")
+                .to("kafka:{{example.services.train}}")
                 .log("train seat reserved for saga #${header.id} with payment transaction: ${body}")
                 .setHeader("payFor", constant("flight"))
-                .to("jms:queue:{{example.services.flight}}?exchangePattern=InOut" +
-                        "&replyTo={{example.services.flight}}.reply")
+                .to("kafka:{{example.services.flight}}")
                 .log("flight booked for saga #${header.id} with payment transaction: ${body}")
                 .setBody(header("Long-Running-Action"))
                 .end();

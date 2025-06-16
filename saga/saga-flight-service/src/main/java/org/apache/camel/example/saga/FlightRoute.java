@@ -16,6 +16,7 @@
  */
 package org.apache.camel.example.saga;
 
+import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.SagaPropagation;
 
@@ -23,16 +24,19 @@ public class FlightRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("jms:queue:{{example.services.flight}}")
+        from("kafka:{{example.services.flight}}?groupId=flight")
                 .saga()
                 .propagation(SagaPropagation.MANDATORY)
                 .option("id", header("id"))
                 .compensation("direct:cancelPurchase")
+                .transform().header(Exchange.SAGA_LONG_RUNNING_ACTION)
                 .log("Buying flight #${header.id}")
-                .to("jms:queue:{{example.services.payment}}?exchangePattern=InOut" +
-                        "&replyTo={{example.services.payment}}.flight.reply")
+                .to("kafka:{{example.services.payment}}")
                 .log("Payment for flight #${header.id} done with transaction ${body}")
                 .end();
+
+        from("kafka:saga-payment-service-result")
+                .log("Result received from payment service");
 
         from("direct:cancelPurchase")
                 .log("Flight purchase #${header.id} has been cancelled due to payment failure");
