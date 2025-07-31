@@ -28,6 +28,7 @@ public class PaymentRoute extends RouteBuilder {
         from("kafka:{{example.services.payment}}?groupId=payment")
                 .routeId("payment-service")
                 .saga()
+                .timeout("1h")
                 .propagation(SagaPropagation.MANDATORY)
                 .option("id", header("id"))
                 .compensation("direct:cancelPayment")

@@ -26,6 +26,7 @@ public class TrainRoute extends RouteBuilder {
     public void configure() throws Exception {
         from("kafka:{{example.services.train}}?groupId=train")
                 .saga()
+                .timeout("1h")
                 .propagation(SagaPropagation.MANDATORY)
                 .option("id", header("id"))
                 .compensation("direct:cancelPurchase")

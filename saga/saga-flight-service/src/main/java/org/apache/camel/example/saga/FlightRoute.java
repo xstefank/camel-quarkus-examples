@@ -26,6 +26,7 @@ public class FlightRoute extends RouteBuilder {
     public void configure() throws Exception {
         from("kafka:{{example.services.flight}}?groupId=flight")
                 .saga()
+                .timeout("1h")
                 .propagation(SagaPropagation.MANDATORY)
                 .option("id", header("id"))
                 .compensation("direct:cancelPurchase")
